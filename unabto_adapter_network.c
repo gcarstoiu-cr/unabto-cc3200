@@ -9,7 +9,7 @@
 #include <modules/list/utlist.h>
 
 // Socket Includes
-#include "socket.h"
+#include <ti/drivers/net/wifi/simplelink.h>
 
 typedef struct socketListElement {
     nabto_socket_t socket;
@@ -19,12 +19,14 @@ typedef struct socketListElement {
 
 static struct socketListElement* socketList = 0;
 
+extern int errno;
+
 bool nabto_init_socket(uint32_t localAddr, uint16_t* localPort,
                        nabto_socket_t* sock) {
     NABTO_LOG_TRACE(("Open socket: ip=" PRIip ", port=%u",
                      MAKE_IP_PRINTABLE(localAddr), (int)*localPort));
 
-    nabto_socket_t sd = sl_Socket(SL_PF_INET, SL_SOCK_DGRAM, 0);
+    nabto_socket_t sd = sl_Socket(SL_AF_INET, SL_SOCK_DGRAM, 0);
     if (sd < 0) {
         NABTO_LOG_ERROR(
             ("Unable to create socket: (%i) '%s'.", errno, strerror(errno)));
@@ -46,7 +48,7 @@ bool nabto_init_socket(uint32_t localAddr, uint16_t* localPort,
     }
 
     SlSockNonblocking_t enableOption;
-    enableOption.NonblockingEnabled = 1;
+    enableOption.NonBlockingEnabled = 1;
     sl_SetSockOpt(sd, SL_SOL_SOCKET, SL_SO_NONBLOCKING, (uint8_t*)&enableOption,
                   sizeof(enableOption));
 
@@ -97,25 +99,9 @@ ssize_t nabto_read(nabto_socket_t sock, uint8_t* buf, size_t len,
     struct SlSockAddrIn_t sa;
     SlSocklen_t addrlen = sizeof(sa);
 
-    // read the header first
+    // read the entire message
     ssize_t bytesRecvd =
-        sl_RecvFrom(sock, buf, 16, 0, (struct SlSockAddr_t*)&sa, &addrlen);
-
-    if (bytesRecvd < 16) {
-        return 0;
-    }
-
-    // get actual message length from header
-    uint16_t msgLen;
-    READ_U16(msgLen , buf + 14);
-
-    if(msgLen > len) {
-        msgLen = len;
-    }
-
-    // read the remaining message
-    bytesRecvd += sl_RecvFrom(sock, buf + 16, msgLen - 16, 0,
-                              (struct SlSockAddr_t*)&sa, &addrlen);
+        sl_RecvFrom(sock, buf, len /*16*/, 0, (struct SlSockAddr_t*)&sa, &addrlen);
 
     if (bytesRecvd < 16) {
         return 0;
@@ -162,12 +148,12 @@ void wait_event() {
     timeout_val.tv_usec = (timeout * 1000) % 1000000;
 
     SlFdSet_t read_fds;
-    SL_FD_ZERO(&read_fds);
+    SL_SOCKET_FD_ZERO(&read_fds);
     unsigned int max_fd = 0;
 
     socketListElement* se;
     DL_FOREACH(socketList, se) {
-        SL_FD_SET(se->socket, &read_fds);
+        SL_SOCKET_FD_SET(se->socket, &read_fds);
         max_fd = MAX(max_fd, se->socket);
     }
 
@@ -177,7 +163,7 @@ void wait_event() {
         NABTO_LOG_ERROR(("Select returned error"));
     } else if (nfds > 0) {
         DL_FOREACH(socketList, se) {
-            if (SL_FD_ISSET(se->socket, &read_fds)) {
+            if (SL_SOCKET_FD_ISSET(se->socket, &read_fds)) {
                 while(unabto_read_socket(se->socket));
             }
         }

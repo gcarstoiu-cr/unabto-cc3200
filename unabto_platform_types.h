@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include <sys/types.h>
 
 typedef uint32_t nabto_stamp_t;
 typedef int32_t nabto_stamp_diff_t;

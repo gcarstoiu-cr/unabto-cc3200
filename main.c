@@ -39,11 +39,24 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+/* POSIX Header files */
+#include <pthread.h>
+
+/* RTOS header files */
+#include "FreeRTOS.h"
+#include "task.h"
+
 // SimpleLink includes
-#include "simplelink.h"
+#include <ti/drivers/net/wifi/simplelink.h>
+/* TI-RTOS Header files */
+#include <ti/drivers/GPIO.h>
+/* Example/Board Header files */
+#include "Board.h"
+
+//
+#include <unabto_platform.h>
 
 // free-rtos/ ti_rtos includes
-#include "osi.h"
 
 // Hardware & DriverLib library includes.
 #include "hw_common_reg.h"
@@ -57,24 +70,26 @@
 #include "uart.h"
 #include "utils.h"
 #include "gpio.h"
-#include "gpio_if.h"
 #include "shamd5.h"
 #include "aes.h"
 
 // Common interface includes
-#include "common.h"
-#include "uart_if.h"
+#include "uart_term.h"
 
-// App include
-#include "pinmux.h"
 
-#define OSI_STACK_SIZE 2048
+/* Stack size in bytes */
+#define THREADSTACKSIZE     (4096)
+//
+#define TASK_STACK_SIZE     (2048)
+//
+#define SPAWN_TASK_PRIORITY     (9)
 
 //*****************************************************************************
 //                 GLOBAL VARIABLES -- Start
 //*****************************************************************************
-OsiTaskHandle g_NetworkTask = NULL;
-OsiTaskHandle g_UNabtoTask = NULL;
+pthread_t  g_NetworkTask = (pthread_t)NULL;
+pthread_t  g_UNabtoTask  = (pthread_t)NULL;
+pthread_t  gSpawn_thread = (pthread_t)NULL;
 
 #if defined(ccs)
 extern void (*const g_pfnVectors[])(void);
@@ -89,11 +104,9 @@ extern uVectorEntry __vector_table;
 //******************************************************************************
 //                    FUNCTION DECLARATIONS
 //******************************************************************************
-extern void Network(void *pvParameters);
-extern void UNabto(void *pvParameters);
+extern void *Network(void *pvParameters);
+extern void *UNabto(void *pvParameters);
 
-extern void SHAMD5IntHandler(void);
-extern void AESIntHandler(void);
 
 //*****************************************************************************
 //
@@ -118,7 +131,10 @@ void vApplicationTickHook(void) {
 //!
 //*****************************************************************************
 void vAssertCalled(const char *pcFile, unsigned long ulLine) {
-    LOOP_FOREVER();
+    while(1)
+    {
+
+    }
 }
 
 //*****************************************************************************
@@ -143,16 +159,21 @@ void vApplicationIdleHook(void) {
 //! \return none
 //!
 //*****************************************************************************
-void vApplicationStackOverflowHook(OsiTaskHandle *pxTask,
+void vApplicationStackOverflowHook(TaskHandle_t pxTask,
                                    signed char *pcTaskName) {
     (void)pxTask;
     (void)pcTaskName;
 
-    LOOP_FOREVER();
+    while(1)
+    {
+    }
 }
 
 void vApplicationMallocFailedHook() {
-    LOOP_FOREVER();
+    /* Handle Memory Allocation Errors */
+    while(1)
+    {
+    }
 }
 
 //*****************************************************************************
@@ -166,97 +187,91 @@ void vApplicationMallocFailedHook() {
 //*****************************************************************************
 static void DisplayBanner(void) {
     UART_PRINT("*************************************************\n\r");
-    UART_PRINT("                   CC3200 + uNabto               \n\r");
+    UART_PRINT("                   CC3220 + uNabto               \n\r");
     UART_PRINT("*************************************************\n\r");
     UART_PRINT("\n\r");
 }
 
-//*****************************************************************************
-//
-//! Board Initialization & Configuration
-//!
-//! \param  none
-//!
-//! \return none
-//
-//*****************************************************************************
-void BoardInit(void) {
-/* In case of TI-RTOS vector table is initialize by OS itself */
-#ifndef USE_TIRTOS
-//
-// Set vector table base
-//
-#if defined(ccs)
-    MAP_IntVTableBaseSet((unsigned long)&g_pfnVectors[0]);
-#endif
-#if defined(ewarm)
-    MAP_IntVTableBaseSet((unsigned long)&__vector_table);
-#endif
-#endif
-    //
-    // Enable Processor
-    //
-    MAP_IntMasterEnable();
-    MAP_IntEnable(FAULT_SYSTICK);
-
-    PRCMCC3200MCUInit();
-}
 //******************************************************************************
 //                            MAIN FUNCTION
 //******************************************************************************
-int main() {
-    long lRetVal = -1;
+int main(void)
+{
+    int                 retc = -1;
+    pthread_attr_t      pAttrs;
+    struct sched_param  priParam;
+    pthread_attr_t      pAttrs_spawn;
+    struct sched_param  priParam_spawn;
+    int                 detachState;
 
-    BoardInit();
+    /* Call board init functions */
+    Board_initGeneral();
 
-    PinMuxConfig();
+    /* Initializes the SPI interface to the Network Processor and peripheral SPI (if defined in the board file) */
+    Board_initSPI();
+    Board_initGPIO();
 
     InitTerm();
 
     DisplayBanner();
 
-    //
-    // Enable the crypto module
-    //
-    MAP_PRCMPeripheralClkEnable(PRCM_DTHE, PRCM_RUN_MODE_CLK);
 
-    //
-    // Enable crypto interrupts
-    //
-    MAP_SHAMD5IntRegister(SHAMD5_BASE, SHAMD5IntHandler);
-    MAP_AESIntRegister(AES_BASE, AESIntHandler);
+    /* Create the sl_Task internal spawn thread */
+    pthread_attr_init(&pAttrs_spawn);
+    priParam_spawn.sched_priority = SPAWN_TASK_PRIORITY;
+    retc = pthread_attr_setschedparam(&pAttrs_spawn, &priParam_spawn);
+    retc |= pthread_attr_setstacksize(&pAttrs_spawn, TASK_STACK_SIZE);
 
-    //
-    // Start the simplelink thread
-    //
-    lRetVal = VStartSimpleLinkSpawnTask(9);
-    if (lRetVal < 0) {
-        ERR_PRINT(lRetVal);
-        LOOP_FOREVER();
+    /* The SimpleLink host driver architecture mandate spawn thread to be created prior to calling Sl_start (turning the NWP on). */
+    /* The purpose of this thread is to handle asynchronous events sent from the NWP.
+     * Every event is classified and later handled by the Host driver event handlers. */
+    retc = pthread_create(&gSpawn_thread, &pAttrs_spawn, sl_Task, NULL);
+    if(retc < 0)
+    {
+        /* Handle Error */
+         UART_PRINT("Network Terminal - Unable to create spawn thread \n");
+         return(NULL);
+    }
+
+    /* Set priority and stack size attributes */
+    pthread_attr_init(&pAttrs);
+    priParam.sched_priority = 1;
+
+    detachState = PTHREAD_CREATE_DETACHED;
+    retc = pthread_attr_setdetachstate(&pAttrs, detachState);
+    if (retc != 0) {
+        /* pthread_attr_setdetachstate() failed */
+        while (1);
+    }
+
+    pthread_attr_setschedparam(&pAttrs, &priParam);
+
+    retc |= pthread_attr_setstacksize(&pAttrs, THREADSTACKSIZE);
+    if (retc != 0) {
+        /* pthread_attr_setstacksize() failed */
+        while (1);
     }
 
     //
     // Start the Network Task
     //
-    lRetVal = osi_TaskCreate(Network, (signed char *)"NetworkTask",
-                             OSI_STACK_SIZE, NULL, 1, &g_NetworkTask);
-    if (lRetVal < 0) {
-        ERR_PRINT(lRetVal);
-        LOOP_FOREVER();
+    retc = pthread_create(&g_NetworkTask, &pAttrs, Network, NULL);
+    if (retc != 0) {
+        /* pthread_create() failed */
+        while (1);
     }
 
     //
     // Start the uNabto Task
     //
-    lRetVal = osi_TaskCreate(UNabto, (signed char *)"uNabtoTask", OSI_STACK_SIZE,
-                             NULL, 1, &g_UNabtoTask);
-    if (lRetVal < 0) {
-        ERR_PRINT(lRetVal);
-        LOOP_FOREVER();
+    retc = pthread_create(&g_UNabtoTask, &pAttrs, UNabto, NULL);
+    if (retc != 0) {
+        /* pthread_create() failed */
+        while (1);
     }
 
-    //
-    // Start the task scheduler
-    //
-    osi_start();
+    /* Start the FreeRTOS scheduler */
+    vTaskStartScheduler();
+
+    return (0);
 }

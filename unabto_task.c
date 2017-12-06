@@ -10,22 +10,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <unistd.h>
 
 // free-rtos/ ti_rtos includes
-#include "osi.h"
+#include "FreeRTOS.h"
+#include "task.h"
 
 // Hardware & DriverLib library includes.
-#include "gpio_if.h"
+
 #include "rom_map.h"
 
 // Common interface includes
-#include "common.h"
-#include "uart_if.h"
+
 
 // Nabto Includes
 #include <unabto/unabto_app.h>
 #include <unabto/unabto_common_main.h>
 #include <unabto_version.h>
+#include "unabto_platform.h"
 #include "stream_echo.h"
 
 //*****************************************************************************
@@ -62,10 +64,10 @@ int hctoi(const unsigned char h) {
 //! \return None
 //!
 //*****************************************************************************
-void UNabto(void* pvParameters) {
+void* UNabto(void* pvParameters) {
     // device id and key from developer.nabto.com
-    const char* nabtoId = "<DEVICE ID>";
-    const char* presharedKey = "<KEY>";
+    const char* nabtoId = "nvnwkucw.f7tuuf.appmyproduct.com";
+    const char* presharedKey = "e76b98723bcecc85eade6a2b1a4fd54e";
 
     // Initialize uNabto
     nabto_main_setup* nms = unabto_init_context();
@@ -82,7 +84,7 @@ void UNabto(void* pvParameters) {
     }
 
     while ((!IS_CONNECTED(g_ulStatus)) || (!IS_IP_ACQUIRED(g_ulStatus))) {
-        osi_Sleep(500);
+        usleep(500);
     }
 
     srand(xTaskGetTickCount());
@@ -90,9 +92,12 @@ void UNabto(void* pvParameters) {
     stream_echo_init();
     unabto_init();
 
+
     while (true) {
         wait_event();
     }
+
+    return NULL;
 }
 
 application_event_result application_event(application_request* appreq,

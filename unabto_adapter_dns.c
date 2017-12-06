@@ -1,5 +1,4 @@
 #include <unabto/unabto_external_environment.h>
-#include "socket.h"
 
 uint32_t resolved_v4addr;
 nabto_dns_status_t resolve_dns_status = NABTO_DNS_NOT_FINISHED;
