@@ -215,7 +215,6 @@ int main(void)
 
     DisplayBanner();
 
-
     /* Create the sl_Task internal spawn thread */
     pthread_attr_init(&pAttrs_spawn);
     priParam_spawn.sched_priority = SPAWN_TASK_PRIORITY;

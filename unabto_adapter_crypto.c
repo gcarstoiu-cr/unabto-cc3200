@@ -16,6 +16,7 @@
 // Driverlib includes
 #include "aes.h"
 
+#define INIT_VECTOR_SIZE    (16)
 
 static CryptoCC32XX_Handle          cryptoHandle;
 static CryptoCC32XX_HmacMethod      config;
@@ -24,6 +25,7 @@ static CryptoCC32XX_EncryptParams   encryptParams;
 
 static bool firstRun = true;
 
+static uint8_t initVector[INIT_VECTOR_SIZE];
 static uint8_t key[512];
 static uint8_t hashResult[CryptoCC32XX_SHA256_DIGEST_SIZE];
 
@@ -46,7 +48,7 @@ static void init_crypto_engine(bool *isFirstRun)
 static bool aes128_cbc_crypt(const uint8_t *key, uint8_t *input, uint16_t input_len,
                              uint32_t function)
 {
-    if ((input_len < 16) || (input_len % 16 != 0)) 
+    if ((input_len < INIT_VECTOR_SIZE) || (input_len % INIT_VECTOR_SIZE != 0))
     {
         return false;
     }
@@ -56,13 +58,16 @@ static bool aes128_cbc_crypt(const uint8_t *key, uint8_t *input, uint16_t input_
     init_crypto_engine(&firstRun);
 
     // separate iv and data
-    uint8_t *iv = input;
-    input += 16;
-    input_len -= 16;   
+    // also, save the IV to restore it later, as the TI driverlib encrypt/decrypt functions
+    // overwrite it with the newly calculated value, in AES-CBC mode
+    memcpy(initVector, input, sizeof(initVector));
+    input += INIT_VECTOR_SIZE;
+    input_len -= INIT_VECTOR_SIZE;
+
 
     encryptParams.aes.keySize = CryptoCC32XX_AES_KEY_SIZE_128BIT;
     encryptParams.aes.pKey    = key; // desiredKey length should be as the desiredKeySize
-    encryptParams.aes.pIV     = (void *)iv;
+    encryptParams.aes.pIV     = (void *)initVector;
     uint8_t *output    = input;
     size_t  outputLength = 0;
     int32_t error = CryptoCC32XX_STATUS_ERROR;
@@ -80,7 +85,7 @@ static bool aes128_cbc_crypt(const uint8_t *key, uint8_t *input, uint16_t input_
                                       output , &outputLength, &encryptParams );
     }
 
-    if ((CryptoCC32XX_STATUS_SUCCESS == error) /*&& (outputLength > 0)*/)
+    if (CryptoCC32XX_STATUS_SUCCESS == error)
     {
         retVal = true;
     }

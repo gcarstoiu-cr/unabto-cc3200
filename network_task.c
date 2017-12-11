@@ -70,12 +70,9 @@
 #define OS_ERROR                ("OS error, please refer \"NETAPP ERRORS CODES\" section in errno.h")
 
 //
-#define SSID_NAME       "CodeRepublikFolks2.4GHz"
+#define SSID_NAME       "<SSID name>"
 #define SECURITY_TYPE   SL_WLAN_SEC_TYPE_WPA_WPA2
-#define SECURITY_KEY    "coding1234"
-//#define SSID_NAME       "CWNet"
-//#define SECURITY_TYPE   SL_WLAN_SEC_TYPE_WPA_WPA2
-//#define SECURITY_KEY    "vfrtyhb_g"
+#define SECURITY_KEY    "SSID password"
 
 //*****************************************************************************
 //                 GLOBAL VARIABLES -- Start

@@ -66,12 +66,12 @@ int hctoi(const unsigned char h) {
 //*****************************************************************************
 void* UNabto(void* pvParameters) {
     // device id and key from developer.nabto.com
-    const char* nabtoId = "nvnwkucw.f7tuuf.appmyproduct.com";
-    const char* presharedKey = "e76b98723bcecc85eade6a2b1a4fd54e";
+    const char* nabtoId = "<DEVICE ID>";
+    const char* presharedKey = "<KEY>";
 
     // Initialize uNabto
     nabto_main_setup* nms = unabto_init_context();
-    nms->ipAddress = g_uiIpAddress;
+    
     nms->id = nabtoId;
     nms->secureAttach = 1;
     nms->secureData = 1;
@@ -87,6 +87,7 @@ void* UNabto(void* pvParameters) {
         usleep(500);
     }
 
+    nms->ipAddress = g_uiIpAddress;
     srand(xTaskGetTickCount());
 
     stream_echo_init();
