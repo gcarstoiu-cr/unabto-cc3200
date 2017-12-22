@@ -7,8 +7,12 @@
  * The default value will be used if a specific setting is not set here.
  */
 
-#define NABTO_ENABLE_STREAM         1
-#define NABTO_SET_TIME_FROM_ALIVE   0
-#define NABTO_ENABLE_LOGGING        1
+#define NABTO_ENABLE_STREAM             1
+#define NABTO_SET_TIME_FROM_ALIVE       0
+#define NABTO_ENABLE_LOGGING            1
+
+#define NABTO_STREAM_MAX_STREAMS            2
+#define NABTO_STREAM_RECEIVE_WINDOW_SIZE    (4)
+#define NABTO_STREAM_SEND_WINDOW_SIZE       (10)
 
 #endif

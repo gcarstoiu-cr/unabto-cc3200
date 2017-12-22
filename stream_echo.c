@@ -2,6 +2,10 @@
 #include <unabto/unabto_memory.h>
 #include <stream_echo.h>
 
+//
+#define STREAM_MAX_SIZE     (86*STREAM_BUF_SIZE)
+#define STREAM_BUF_SIZE     (12*1024)
+
 /**
  * Stream echo server
  *
@@ -32,6 +36,9 @@ typedef struct {
 } echo_stream;
 
 echo_stream echo_streams[NABTO_MEMORY_STREAM_MAX_STREAMS];
+//
+static uint32_t totalSize = 0;
+static uint8_t testBuffer[STREAM_BUF_SIZE] = {0};
 
 void stream_echo_init() {
     memset(echo_streams, 0, sizeof(echo_streams));
@@ -54,6 +61,9 @@ void unabto_stream_event(unabto_stream* stream, unabto_stream_event_type type) {
     if (echo->state == ECHO_STATE_READ_COMMAND) {
         const uint8_t* buf;
         unabto_stream_hint hint;
+
+        totalSize = 0;
+
         size_t readLength = unabto_stream_read(stream, &buf, &hint);
 
         if (readLength > 0) {
@@ -108,31 +118,34 @@ void unabto_stream_event(unabto_stream* stream, unabto_stream_event_type type) {
         }
     }
 
-    if (echo->state == ECHO_STATE_FORWARDING) {
-        const uint8_t* buf;
+    if (echo->state == ECHO_STATE_FORWARDING)
+    {
+        const uint8_t* buf = testBuffer;
         unabto_stream_hint hint;
-        size_t readLength = unabto_stream_read(stream, &buf, &hint);
-
-        if (readLength > 0) {
-            size_t writeLength =
-                unabto_stream_write(stream, buf, readLength, &hint);
-            if (writeLength > 0) {
-                if (!unabto_stream_ack(stream, buf, writeLength, &hint)) {
-                    echo->state = ECHO_STATE_CLOSING;
-                }
-            } else {
-                if (hint != UNABTO_STREAM_HINT_OK) {
+        if (UNABTO_STREAM_EVENT_TYPE_DATA_WRITTEN == type)
+        {
+            size_t writeLength = unabto_stream_write(stream, buf, sizeof(testBuffer), &hint);
+            if (writeLength > 0)
+            {
+                // NABTO_LOG_INFO(("-->Wrote [%" PRIu16 "] bytes to stream!", writeLength));
+                totalSize += writeLength;
+                if (STREAM_MAX_SIZE <= totalSize)
+                {
                     echo->state = ECHO_STATE_CLOSING;
                 }
             }
-        } else {
-            if (hint != UNABTO_STREAM_HINT_OK) {
-                echo->state = ECHO_STATE_CLOSING;
+            else
+            {
+                if (hint != UNABTO_STREAM_HINT_OK)
+                {
+                    echo->state = ECHO_STATE_CLOSING;
+                }
             }
         }
     }
 
-    if (echo->state == ECHO_STATE_CLOSING) {
+    if (echo->state == ECHO_STATE_CLOSING)
+    {
         if (unabto_stream_close(stream)) {
             unabto_stream_release(stream);
             echo->state = ECHO_STATE_IDLE;

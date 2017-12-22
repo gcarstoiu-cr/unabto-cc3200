@@ -78,9 +78,9 @@
 
 
 /* Stack size in bytes */
-#define THREADSTACKSIZE     (4096)
+#define THREADSTACKSIZE     (2048)
 //
-#define TASK_STACK_SIZE     (2048)
+#define TASK_STACK_SIZE     (1024)
 //
 #define SPAWN_TASK_PRIORITY     (9)
 
