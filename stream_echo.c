@@ -3,7 +3,7 @@
 #include <stream_echo.h>
 
 //
-#define STREAM_MAX_SIZE     (86*STREAM_BUF_SIZE)
+#define STREAM_MAX_SIZE     (172*STREAM_BUF_SIZE)
 #define STREAM_BUF_SIZE     (12*1024)
 
 /**
@@ -27,8 +27,6 @@ typedef enum {
     ECHO_STATE_CLOSING
 } echo_state;
 
-const char* echoString = "echo";
-
 typedef struct {
     uint16_t commandLength;
     bool commandOk;
@@ -36,7 +34,9 @@ typedef struct {
 } echo_stream;
 
 echo_stream echo_streams[NABTO_MEMORY_STREAM_MAX_STREAMS];
+
 //
+static uint32_t requestedSize = 0;
 static uint32_t totalSize = 0;
 static uint8_t testBuffer[STREAM_BUF_SIZE] = {0};
 
@@ -65,33 +65,30 @@ void unabto_stream_event(unabto_stream* stream, unabto_stream_event_type type) {
         totalSize = 0;
 
         size_t readLength = unabto_stream_read(stream, &buf, &hint);
+        if (readLength > 0)
+        {
+            size_t ackLength = readLength;
 
-        if (readLength > 0) {
-            size_t i;
-            size_t ackLength = 0;
+            requestedSize = atoi(buf);
+            NABTO_LOG_INFO(("--> Client requested size (%d)", requestedSize));
 
-            for (i = 0; i < readLength; i++) {
-                ackLength++;
-                if (echo->commandLength == strlen(echoString)) {
-                    if (buf[i] == '\n') {
-                        echo->state = ECHO_STATE_COMMAND_OK;
-                        break;
-                    }
-                } else {
-                    if (buf[i] != echoString[echo->commandLength] ||
-                        echo->commandLength > strlen(echoString)) {
-                        echo->state = ECHO_STATE_COMMAND_FAIL;
-                        ackLength = readLength;
-                        break;
-                    }
-                    echo->commandLength++;
-                }
+            if (requestedSize <= STREAM_MAX_SIZE)
+            {
+                echo->state = ECHO_STATE_COMMAND_OK;
             }
+            else
+            {
+                echo->state = ECHO_STATE_CLOSING;
+            }
+
+
             if (!unabto_stream_ack(stream, buf, ackLength, &hint)) {
                 echo->state = ECHO_STATE_CLOSING;
             }
 
-        } else {
+        }
+        else
+        {
             if (hint != UNABTO_STREAM_HINT_OK) {
                 echo->state = ECHO_STATE_CLOSING;
             }
@@ -129,7 +126,7 @@ void unabto_stream_event(unabto_stream* stream, unabto_stream_event_type type) {
             {
                 // NABTO_LOG_INFO(("-->Wrote [%" PRIu16 "] bytes to stream!", writeLength));
                 totalSize += writeLength;
-                if (STREAM_MAX_SIZE <= totalSize)
+                if (requestedSize <= totalSize)
                 {
                     echo->state = ECHO_STATE_CLOSING;
                 }
