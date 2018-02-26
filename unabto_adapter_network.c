@@ -19,7 +19,7 @@ typedef struct socketListElement {
 
 static struct socketListElement* socketList = 0;
 
-extern int errno;
+//extern int errno;
 
 bool nabto_init_socket(uint32_t localAddr, uint16_t* localPort,
                        nabto_socket_t* sock) {

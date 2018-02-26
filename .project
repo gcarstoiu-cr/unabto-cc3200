@@ -28,7 +28,7 @@
 	<variableList>
 		<variable>
 			<name>CC3200_SDK_ROOT</name>
-			<value>file:/C:/ti/simplelink_cc32xx_sdk_1_50_00_06</value>
+			<value>file:/home/gabriel/Work/eyecloud-camera/sw/CC3220-SDK</value>
 		</variable>
 		<variable>
 			<name>UNABTO_SDK_ROOT</name>

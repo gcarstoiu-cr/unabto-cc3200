@@ -527,7 +527,7 @@ long ConfigureSimpleLinkToDefaultState()
 
     /* Configure scan parameters to default */
     ScanDefault.ChannelsMask = CHANNEL_MASK_ALL;
-    ScanDefault.RssiThershold = RSSI_TH_MAX;
+    ScanDefault.RssiThreshold = RSSI_TH_MAX;
 
     RetVal = sl_WlanSet(SL_WLAN_CFG_GENERAL_PARAM_ID, SL_WLAN_GENERAL_PARAM_OPT_SCAN_PARAMS, sizeof(ScanDefault), (uint8_t *)&ScanDefault);
     ASSERT_ON_ERROR(RetVal, WLAN_ERROR);

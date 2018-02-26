@@ -35,7 +35,8 @@
 									<listOptionValue builtIn="false" value="${INHERITED_INCLUDE_PATH}"/>
 									<listOptionValue builtIn="false" value="${XDC_INCLUDE_PATH}"/>
 									<listOptionValue builtIn="false" value="${WORKSPACE_LOC}/freertos_builds_CC3220S_LAUNCHXL_release_ccs"/>
-									<listOptionValue builtIn="false" value="${CC3200_SDK_ROOT}/kernel/freertos/posix"/>
+									<listOptionValue builtIn="false" value="${CC3200_SDK_ROOT}/source/ti/posix/ccs"/>
+									<listOptionValue builtIn="false" value="${CC3200_SDK_ROOT}/source"/>
 									<listOptionValue builtIn="false" value="${FREERTOS_INSTALL_DIR}/FreeRTOS/Source/portable/CCS/ARM_CM3"/>
 									<listOptionValue builtIn="false" value="${FREERTOS_INSTALL_DIR}/FreeRTOS/Source/include"/>
 									<listOptionValue builtIn="false" value="${CG_TOOL_ROOT}/include"/>
@@ -121,7 +122,7 @@
 				</configuration>
 			</storageModule>
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings">
-				<externalSettings containerId="freertos_builds_CC3220S_LAUNCHXL_release_ccs;com.ti.ccstudio.buildDefinitions.TMS470.Release.1124476010" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier"/>
+				<externalSettings containerId="freertos_builds_CC3220S_LAUNCHXL_release_ccs;com.ti.ccstudio.buildDefinitions.TMS470.Release.1626559962" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier"/>
 			</storageModule>
 		</cconfiguration>
 	</storageModule>
