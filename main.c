@@ -50,6 +50,7 @@
 #include <ti/drivers/net/wifi/simplelink.h>
 /* TI-RTOS Header files */
 #include <ti/drivers/GPIO.h>
+#include <ti/drivers/Timer.h>
 /* Example/Board Header files */
 #include "Board.h"
 
@@ -210,6 +211,8 @@ int main(void)
     /* Initializes the SPI interface to the Network Processor and peripheral SPI (if defined in the board file) */
     Board_initSPI();
     Board_initGPIO();
+
+    Timer_init();
 
     InitTerm();
 

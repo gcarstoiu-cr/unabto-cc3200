@@ -1,4 +1,4 @@
-#include <errno.h>
+//#include <errno.h>
 #include <stdlib.h>
 
 // Nabto Includes
@@ -11,6 +11,9 @@
 // Socket Includes
 #include <ti/drivers/net/wifi/simplelink.h>
 
+////DEBUG
+#include <ti/drivers/Timer.h>
+
 typedef struct socketListElement {
     nabto_socket_t socket;
     struct socketListElement* prev;
@@ -19,7 +22,7 @@ typedef struct socketListElement {
 
 static struct socketListElement* socketList = 0;
 
-//extern int errno;
+extern int errno;
 
 bool nabto_init_socket(uint32_t localAddr, uint16_t* localPort,
                        nabto_socket_t* sock) {
@@ -132,7 +135,60 @@ ssize_t nabto_write(nabto_socket_t sock, const uint8_t* buf, size_t len,
     return bytesSent;
 }
 
+////DEBUG
+static Timer_Handle timer0;
+static Timer_Params params;
+static uint32_t timerValue = 0u;
+static uint32_t timerValue2 = 0u;
+static bool isTimerInit = false;
+
+static void debug_timer_init(void)
+{
+    if (!isTimerInit)
+    {
+        Timer_Params_init(&params);
+        params.period = 0xFFFFFF00;
+        params.periodUnits = Timer_PERIOD_COUNTS;
+        params.timerMode = Timer_FREE_RUNNING;
+
+        timer0 = Timer_open(Board_TIMER0, &params);
+
+        if (timer0 == NULL) {
+            /* Failed to initialized timer */
+            while (1);
+        }
+
+        if (Timer_start(timer0) == Timer_STATUS_ERROR) {
+                        /* Failed to start timer */
+                        while (1);
+                    }
+
+        isTimerInit = true;
+    }
+}
+
+typedef struct
+{
+    uint32_t timerTicks;
+    uint32_t dataSize;
+} debugMeasData_t;
+
+static debugMeasData_t measBuffer[350] = {0};
+static void debug_save_meas_data(uint32_t ticks, uint32_t size)
+{
+    static int i = 0;
+    if (i < sizeof(measBuffer)/sizeof(measBuffer[0]))
+    {
+        measBuffer[i].timerTicks = ticks;
+        measBuffer[i].dataSize = size;
+        i += 1;
+    }
+}
+
 void wait_event() {
+////DEBUG
+    debug_timer_init();
+
     nabto_stamp_t next_event;
     unabto_next_event(&next_event);
 
@@ -156,8 +212,10 @@ void wait_event() {
         SL_SOCKET_FD_SET(se->socket, &read_fds);
         max_fd = MAX(max_fd, se->socket);
     }
-
+    timerValue = Timer_getCount(timer0);
     int nfds = sl_Select(max_fd + 1, &read_fds, NULL, NULL, &timeout_val);
+    ////DEBUG
+        timerValue = Timer_getCount(timer0) - timerValue;
 
     if (nfds < 0) {
         NABTO_LOG_ERROR(("Select returned error"));
@@ -169,5 +227,10 @@ void wait_event() {
         }
     }
 
+
+
+    timerValue2 = Timer_getCount(timer0);
     unabto_time_event();
+    timerValue2 = Timer_getCount(timer0) - timerValue2;
+    debug_save_meas_data(timerValue, timerValue2);
 }

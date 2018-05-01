@@ -75,10 +75,10 @@
 							</tool>
 							<tool id="com.ti.ccstudio.buildDefinitions.TMS470_16.9.exe.linkerDebug.1239634032" name="ARM Linker" superClass="com.ti.ccstudio.buildDefinitions.TMS470_16.9.exe.linkerDebug">
 								<option id="com.ti.ccstudio.buildDefinitions.TMS470_16.9.linkerID.SEARCH_PATH.276671556" name="Add &lt;dir&gt; to library search path (--search_path, -i)" superClass="com.ti.ccstudio.buildDefinitions.TMS470_16.9.linkerID.SEARCH_PATH" valueType="libPaths">
+									<listOptionValue builtIn="false" value="${CG_TOOL_ROOT}/include"/>
 									<listOptionValue builtIn="false" value="${INHERITED_LIBRARY_PATH}"/>
 									<listOptionValue builtIn="false" value="${XDC_LIBRARY_PATH}"/>
 									<listOptionValue builtIn="false" value="${CG_TOOL_ROOT}/lib"/>
-									<listOptionValue builtIn="false" value="${CG_TOOL_ROOT}/include"/>
 								</option>
 								<option id="com.ti.ccstudio.buildDefinitions.TMS470_16.9.linkerID.LIBRARY.483891202" name="Include library file or command file as input (--library, -l)" superClass="com.ti.ccstudio.buildDefinitions.TMS470_16.9.linkerID.LIBRARY" valueType="libs">
 									<listOptionValue builtIn="false" value="${INHERITED_LIBRARIES}"/>
@@ -105,7 +105,6 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="unabto/src/platforms|unabto/src/modules|unabto/src/device_drivers|unabto/test|unabto/external|unabto/build|unabto/apps|unabto/3rdparty|wlan_station.cmd" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="unabto/src/modules/tunnel_common"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="unabto/apps/rtx4100"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="unabto/apps/pic_demo/src"/>
@@ -117,7 +116,7 @@
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="unabto/apps/nabduino/MPLAB.X"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="unabto/apps/multi_tunnel/src"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="unabto/apps/arduino/Nabto"/>
-						<entry excluding="unabto_sha256.c|unabto_hmac_sha256.c|unabto_aes.c|unabto_aes_cbc.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="unabto/src/modules/crypto/generic"/>
+						<entry excluding="unabto/src/platforms/win32|unabto/src/platforms/unix|unabto/src/platforms/rtx4100|unabto/src/platforms/renesas_rx600|unabto/src/platforms/renesas_rl78|unabto/src/platforms/rak41x|unabto/src/platforms/quectel|unabto/src/platforms/pic32_freertos|unabto/src/platforms/pic32|unabto/src/platforms/pic18|unabto/src/platforms/nuvoton|unabto/src/platforms/mqx|unabto/src/platforms/microchip|unabto/src/platforms/gainspan|unabto/src/platforms/freertos_net|unabto/src/platforms/freertos_lwip|unabto/src/platforms/evolution|unabto/src/platforms/coldfire|unabto/src/platforms/arduino|unabto/src/modules|unabto/src/device_drivers|unabto/test|unabto/external|unabto/build|unabto/apps|unabto/3rdparty|wlan_station.cmd" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
